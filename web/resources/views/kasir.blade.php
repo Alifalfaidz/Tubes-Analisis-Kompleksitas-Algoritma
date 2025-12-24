@@ -8,6 +8,9 @@
   <!-- Tailwind CDN (tanpa Node) -->
   <script src="https://cdn.tailwindcss.com"></script>
 
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
     .grain:before{
       content:"";
@@ -37,16 +40,9 @@
           <h1 class="text-xl font-semibold tracking-tight">Total Belanja: Iteratif vs Rekursif</h1>
         </div>
       </div>
-
-      <div class="hidden sm:flex items-center gap-2">
-        <span class="text-xs text-slate-300">UI/UX: glass • neon • clean</span>
-        <span class="text-xs px-2 py-1 rounded-full bg-white/10 ring-1 ring-white/15">Gen-Z mode ✨</span>
-      </div>
     </div>
 
-    <!-- CARD HEADER (Anggota + Tentang Aplikasi) -->
     <div class="mt-6 grid grid-cols-1 lg:grid-cols-4 gap-4">
-      <!-- Studi kasus / deskripsi singkat (besar) -->
       <div class="relative grain rounded-3xl bg-white/5 ring-1 ring-white/10 p-5 lg:col-span-2 overflow-hidden">
         <p class="text-sm text-slate-300">Studi Kasus</p>
         <h2 class="mt-1 text-2xl font-semibold leading-snug">
@@ -67,7 +63,6 @@
         </div>
       </div>
 
-      <!-- Anggota -->
       <div class="rounded-3xl bg-white/5 ring-1 ring-white/10 p-5">
         <p class="text-sm text-slate-300">Anggota</p>
         <ul class="mt-3 space-y-2 text-slate-200">
@@ -88,7 +83,6 @@
         </div>
       </div>
 
-      <!-- Tentang Aplikasi -->
       <div class="rounded-3xl bg-white/5 ring-1 ring-white/10 p-5">
         <p class="text-sm text-slate-300">Tentang Aplikasi</p>
         <h3 class="mt-2 text-lg font-semibold">Cara Pakai</h3>
@@ -118,6 +112,8 @@
     @endif
   </header>
 
+  @php $result = $result ?? []; @endphp
+
   <main class="mx-auto max-w-6xl px-4 py-8">
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
@@ -139,6 +135,7 @@
             <div>
               <label class="text-sm text-slate-200">Harga (Rp)</label>
               <input type="number" name="price" value="{{ old('price', 10000) }}"
+                step="5000" min="0"
                 class="mt-2 w-full rounded-2xl bg-black/30 ring-1 ring-white/10 px-4 py-3 text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-300" />
             </div>
             <div>
@@ -148,8 +145,12 @@
             </div>
           </div>
 
-          <button class="w-full rounded-2xl bg-gradient-to-r from-fuchsia-500 to-cyan-400 px-4 py-3 font-semibold text-slate-950 hover:opacity-95 active:scale-[0.99] transition">
-            Tambah ke Keranjang ✨
+          <button class="group w-full rounded-2xl bg-gradient-to-r from-fuchsia-500 to-cyan-400 px-4 py-3 font-semibold text-slate-950 hover:opacity-95 active:scale-[0.99] transition">
+            <span class="inline-flex items-center justify-center gap-2">
+              Tambah ke Keranjang
+              <span class="opacity-0 translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition">＋</span>
+              <span class="opacity-80 group-hover:opacity-100 transition">✨</span>
+            </span>
           </button>
         </form>
 
@@ -229,16 +230,41 @@
               <div class="sm:col-span-2">
                 <label class="text-sm text-slate-200">Mode</label>
                 <div class="mt-2 flex flex-wrap gap-2">
-                  <label class="cursor-pointer">
-                    <input type="radio" name="algorithm" value="iterative" class="hidden" checked>
-                    <span class="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 ring-1 ring-emerald-400/20 px-4 py-2 text-sm hover:bg-emerald-500/15 transition">
+
+                  <label class="cursor-pointer group">
+                    <input type="radio" name="algorithm" value="iterative"
+                      class="peer sr-only"
+                      {{ old('algorithm','iterative') === 'iterative' ? 'checked' : '' }}>
+
+                    <span class="relative inline-flex items-center gap-2 rounded-full
+                                 bg-emerald-500/10 ring-1 ring-emerald-400/20
+                                 px-4 py-2 text-sm transition pr-10
+                                 hover:bg-emerald-500/15
+                                 peer-checked:bg-emerald-500/25 peer-checked:ring-emerald-300
+                                 peer-checked:shadow-[0_0_0_1px_rgba(52,211,153,.35)]
+                                 after:content-['+'] after:absolute after:right-3 after:top-1/2
+                                 after:-translate-y-1/2 after:opacity-0 after:transition
+                                 group-hover:after:opacity-100
+                                 peer-checked:after:content-['✓'] peer-checked:after:opacity-100">
                       ⚡ Iteratif <span class="text-xs text-slate-300">(recommended)</span>
                     </span>
                   </label>
 
-                  <label class="cursor-pointer">
-                    <input type="radio" name="algorithm" value="recursive" class="hidden">
-                    <span class="inline-flex items-center gap-2 rounded-full bg-fuchsia-500/10 ring-1 ring-fuchsia-400/20 px-4 py-2 text-sm hover:bg-fuchsia-500/15 transition">
+                  <label class="cursor-pointer group">
+                    <input type="radio" name="algorithm" value="recursive"
+                      class="peer sr-only"
+                      {{ old('algorithm') === 'recursive' ? 'checked' : '' }}>
+
+                    <span class="relative inline-flex items-center gap-2 rounded-full
+                                 bg-fuchsia-500/10 ring-1 ring-fuchsia-400/20
+                                 px-4 py-2 text-sm transition pr-10
+                                 hover:bg-fuchsia-500/15
+                                 peer-checked:bg-fuchsia-500/25 peer-checked:ring-fuchsia-300
+                                 peer-checked:shadow-[0_0_0_1px_rgba(232,121,249,.35)]
+                                 after:content-['+'] after:absolute after:right-3 after:top-1/2
+                                 after:-translate-y-1/2 after:opacity-0 after:transition
+                                 group-hover:after:opacity-100
+                                 peer-checked:after:content-['✓'] peer-checked:after:opacity-100">
                       🌀 Rekursif <span class="text-xs text-slate-300">(experimental)</span>
                     </span>
                   </label>
@@ -247,20 +273,26 @@
 
               <div>
                 <label class="text-sm text-slate-200">Repeat (median)</label>
-                <input type="number" name="repeat" value="10"
+                <input type="number" name="repeat" value="{{ old('repeat', 10) }}"
                   class="mt-2 w-full rounded-2xl bg-black/30 ring-1 ring-white/10 px-4 py-3 text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-300" />
               </div>
 
-              <button class="sm:col-span-3 rounded-2xl bg-gradient-to-r from-emerald-400 to-cyan-300 px-4 py-3 font-semibold text-slate-950 hover:opacity-95 active:scale-[0.99] transition">
-                HITUNG TOTAL 💸
+              <button class="group sm:col-span-3 rounded-2xl bg-gradient-to-r from-emerald-400 to-cyan-300 px-4 py-3 font-semibold text-slate-950 hover:opacity-95 active:scale-[0.99] transition">
+                <span class="inline-flex items-center justify-center gap-2">
+                  HITUNG TOTAL 💸
+                  <span class="opacity-0 translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition">＋</span>
+                </span>
               </button>
             </form>
 
             <form method="POST" action="{{ route('compare') }}" class="mt-3">
               @csrf
-              <input type="hidden" name="repeat" value="10">
-              <button class="w-full rounded-2xl bg-white/10 ring-1 ring-white/15 px-4 py-3 text-sm hover:bg-white/15 transition">
-                Compare Iteratif vs Rekursif 📊
+              <input type="hidden" name="repeat" value="{{ old('repeat', 10) }}">
+              <button class="group w-full rounded-2xl bg-white/10 ring-1 ring-white/15 px-4 py-3 text-sm hover:bg-white/15 transition">
+                <span class="inline-flex items-center justify-center gap-2">
+                  Compare Iteratif vs Rekursif 📊
+                  <span class="opacity-0 translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition">→</span>
+                </span>
               </button>
             </form>
           </div>
@@ -268,8 +300,6 @@
           <!-- Result card -->
           <div class="rounded-2xl bg-black/30 ring-1 ring-white/10 p-4">
             <h3 class="font-semibold">📌 Hasil</h3>
-
-            @php $result = $result ?? []; @endphp
 
             @if(empty($result))
               <p class="text-sm text-slate-300 mt-2">Belum ada hasil. Jalankan “HITUNG TOTAL” dulu.</p>
@@ -319,16 +349,117 @@
           </div>
         </div>
 
+        <!-- GRAFIK BESAR FULL-WIDTH DI DALAM SECTION KANAN -->
+        @if(!empty($result) && (($result['mode'] ?? '') === 'compare'))
+          <section class="mt-6 relative grain rounded-3xl bg-white/5 ring-1 ring-white/10 p-6 overflow-hidden">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <h3 class="text-lg font-semibold">Grafik Perbandingan Performa</h3>
+                <p class="text-sm text-slate-300 mt-1">Waktu eksekusi vs jumlah data (n).</p>
+              </div>
+              <div class="text-xs text-slate-300 rounded-2xl bg-black/30 ring-1 ring-white/10 px-3 py-2">
+                n: <b>{{ $result['n'] }}</b> • repeat: <b>{{ $result['repeat'] }}</b>
+              </div>
+            </div>
+
+            <div class="mt-4 rounded-2xl bg-black/30 ring-1 ring-white/10 p-4">
+              <div class="relative w-full" style="height:520px;">
+                <canvas id="perfBigChart"></canvas>
+              </div>
+            </div>
+          </section>
+        @endif
+
       </section>
     </div>
   </main>
 
-  <!-- Footer credit -->
   <footer class="mx-auto max-w-6xl px-4 pb-10">
     <div class="mt-6 rounded-2xl bg-white/5 ring-1 ring-white/10 p-4 text-xs text-slate-300 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
       <span>© 2025 — Tubes Analisis Kompleksitas Algoritma</span>
       <span class="text-slate-400">Fazrul • Alfaidz • Muhammad</span>
     </div>
   </footer>
+
+  <script>
+  (function () {
+    const result = @json($result ?? []);
+    if (!result || Object.keys(result).length === 0) return;
+    if (result.mode !== 'compare') return;
+
+    const el = document.getElementById('perfBigChart');
+    if (!el) return;
+
+    // pakai curve kalau ada, fallback ke 2 titik
+    const curve = result.curve || null;
+
+    let labels = [];
+    let iter = [];
+    let rec  = [];
+
+    if (curve && curve.labels && curve.iter_ms) {
+      labels = curve.labels;
+      iter = curve.iter_ms || [];
+      rec  = curve.rec_ms || [];
+    } else {
+      labels = ['Iteratif', 'Rekursif'];
+      iter = [result.iter?.time_ms ?? 0];
+      rec  = [(result.rec?.time_ms == null) ? null : result.rec.time_ms];
+    }
+
+    // auto unit ms -> µs
+    let unit = 'ms';
+    const all = [...iter, ...rec].filter(v => v !== null && v !== undefined);
+    const maxVal = all.length ? Math.max(...all) : 0;
+
+    if (maxVal > 0 && maxVal < 1) {
+      unit = 'µs';
+      iter = iter.map(v => v == null ? null : v * 1000);
+      rec  = rec.map(v => v == null ? null : v * 1000);
+    }
+
+    // destroy kalau sebelumnya ada
+    if (window.__perfBigChart) window.__perfBigChart.destroy();
+
+    window.__perfBigChart = new Chart(el, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          { label: `Iteratif (${unit})`, data: iter, tension: 0.25, pointRadius: 5, borderWidth: 3 },
+          { label: `Rekursif (${unit})`, data: rec,  tension: 0.25, pointRadius: 5, borderWidth: 3 },
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true,
+            labels: { color: '#e2e8f0' }
+          },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => ` ${ctx.dataset.label}: ${ctx.raw ?? '-'} ${unit}`
+            }
+          }
+        },
+        scales: {
+          x: {
+            ticks: { color: '#cbd5e1', maxRotation: 0, minRotation: 0 },
+            grid: { color: 'rgba(255,255,255,0.08)' },
+            title: { display: true, text: 'Jumlah Data (n)', color: '#e2e8f0' }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: { color: '#cbd5e1', callback: (v) => v + ' ' + unit },
+            grid: { color: 'rgba(255,255,255,0.10)' },
+            title: { display: true, text: `Waktu Eksekusi (${unit})`, color: '#e2e8f0' }
+          }
+        }
+      }
+    });
+  })();
+  </script>
 </body>
 </html>

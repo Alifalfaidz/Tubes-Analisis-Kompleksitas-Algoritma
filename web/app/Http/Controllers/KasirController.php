@@ -8,12 +8,12 @@ class KasirController extends Controller
 {
     public function index(Request $request)
     {
-        $items = $request->session()->get('items', []);
+        $items  = $request->session()->get('items', []);
         $result = $request->session()->get('result', []);
-        $request->session()->forget('result'); // biar result cuma tampil sekali (opsional)
+        $request->session()->forget('result');
 
         return view('kasir', [
-            'items' => $items,
+            'items'  => $items,
             'result' => $result,
         ]);
     }
@@ -21,17 +21,17 @@ class KasirController extends Controller
     public function addItem(Request $request)
     {
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:60'],
+            'name'  => ['required', 'string', 'max:60'],
             'price' => ['required', 'integer', 'min:0'],
-            'qty' => ['required', 'integer', 'min:1', 'max:1000'],
+            'qty'   => ['required', 'integer', 'min:1', 'max:1000'],
         ]);
 
-        $items = $request->session()->get('items', []);
+        $items   = $request->session()->get('items', []);
         $items[] = [
-            'id' => bin2hex(random_bytes(6)),
-            'name' => $data['name'],
-            'price' => (int)$data['price'],
-            'qty' => (int)$data['qty'],
+            'id'    => bin2hex(random_bytes(6)),
+            'name'  => $data['name'],
+            'price' => (int) $data['price'],
+            'qty'   => (int) $data['qty'],
         ];
         $request->session()->put('items', $items);
 
@@ -61,18 +61,17 @@ class KasirController extends Controller
     {
         $data = $request->validate([
             'algorithm' => ['required', 'in:iterative,recursive'],
-            'repeat' => ['required', 'integer', 'min:1', 'max:50'],
+            'repeat'    => ['required', 'integer', 'min:1', 'max:50'],
         ]);
 
-        $items = $request->session()->get('items', []);
+        $items  = $request->session()->get('items', []);
         $prices = $this->expandToPriceArray($items);
-        $n = count($prices);
+        $n      = count($prices);
 
         if ($n === 0) {
             return redirect()->route('kasir')->withErrors(['items' => 'Keranjang masih kosong. Tambahin barang dulu ya.']);
         }
 
-        // batas aman rekursif (anti stack overflow)
         $maxSafeRecursiveN = 2000;
         if ($data['algorithm'] === 'recursive' && $n > $maxSafeRecursiveN) {
             return redirect()->route('kasir')->withErrors([
@@ -80,19 +79,21 @@ class KasirController extends Controller
             ]);
         }
 
-        [$ms, $total] = $this->timeIt(function() use ($data, $prices) {
+        [$ms, $total] = $this->timeIt(function () use ($data, $prices) {
             return $data['algorithm'] === 'iterative'
                 ? $this->sumIterative($prices)
                 : $this->sumRecursive($prices);
         }, (int)$data['repeat']);
 
+        $algoLabel = $data['algorithm'] === 'iterative' ? 'Iteratif' : 'Rekursif';
+
         $request->session()->put('result', [
-            'mode' => 'single',
-            'algorithm' => $data['algorithm'],
-            'n' => $n,
-            'repeat' => (int)$data['repeat'],
-            'total' => $total,
-            'time_ms' => $ms,
+            'mode'      => 'single',
+            'algorithm' => $algoLabel,
+            'n'         => $n,
+            'repeat'    => (int)$data['repeat'],
+            'total'     => $total,
+            'time_ms'   => $ms,
         ]);
 
         return redirect()->route('kasir');
@@ -104,9 +105,9 @@ class KasirController extends Controller
             'repeat' => ['required', 'integer', 'min:1', 'max:50'],
         ]);
 
-        $items = $request->session()->get('items', []);
+        $items  = $request->session()->get('items', []);
         $prices = $this->expandToPriceArray($items);
-        $n = count($prices);
+        $n      = count($prices);
 
         if ($n === 0) {
             return redirect()->route('kasir')->withErrors(['items' => 'Keranjang masih kosong. Tambahin barang dulu ya.']);
@@ -114,10 +115,10 @@ class KasirController extends Controller
 
         $maxSafeRecursiveN = 2000;
 
-        // Iteratif
+        // iteratif
         [$iterMs, $iterTotal] = $this->timeIt(fn() => $this->sumIterative($prices), (int)$data['repeat']);
 
-        // Rekursif (skip kalau n kebesaran)
+        // rekursif (skip kalau kebesaran)
         $recMs = null;
         $recTotal = null;
         $note = null;
@@ -128,36 +129,61 @@ class KasirController extends Controller
             $note = "Rekursif di-skip karena n={$n} melewati batas aman {$maxSafeRecursiveN}.";
         }
 
+        // ===== kurva time vs n (sample points) =====
+        $curveRepeat = max(1, min(10, (int) floor(((int)$data['repeat']) / 2)));
+
+        $points = $this->makeSamplePoints($n, 10); // 10 titik biar halus
+        $curveLabels = [];
+        $curveIterMs = [];
+        $curveRecMs  = [];
+
+        foreach ($points as $k) {
+            $curveLabels[] = $k;
+
+            [$tIter] = $this->timeIt(fn() => $this->sumIterativePrefix($prices, $k), $curveRepeat);
+            $curveIterMs[] = $tIter;
+
+            if ($k <= $maxSafeRecursiveN) {
+                [$tRec] = $this->timeIt(fn() => $this->sumRecursivePrefix($prices, $k), $curveRepeat);
+                $curveRecMs[] = $tRec;
+            } else {
+                $curveRecMs[] = null;
+            }
+        }
+
         $request->session()->put('result', [
-            'mode' => 'compare',
-            'n' => $n,
+            'mode'   => 'compare',
+            'n'      => $n,
             'repeat' => (int)$data['repeat'],
-            'iter' => ['total' => $iterTotal, 'time_ms' => $iterMs],
-            'rec'  => ['total' => $recTotal,  'time_ms' => $recMs],
-            'note' => $note,
+            'iter'   => ['total' => $iterTotal, 'time_ms' => $iterMs],
+            'rec'    => ['total' => $recTotal,  'time_ms' => $recMs],
+            'note'   => $note,
             'complexity' => [
-                'iterative_time' => 'O(n)',
-                'iterative_space' => 'O(1)',
-                'recursive_time' => 'O(n)',
-                'recursive_space' => 'O(n) (call stack)',
+                'iterative_time'   => 'O(n)',
+                'iterative_space'  => 'O(1)',
+                'recursive_time'   => 'O(n)',
+                'recursive_space'  => 'O(n) (call stack)',
+            ],
+            'curve' => [
+                'labels'  => $curveLabels,
+                'iter_ms' => $curveIterMs,
+                'rec_ms'  => $curveRecMs,
+                'repeat'  => $curveRepeat,
             ],
         ]);
 
         return redirect()->route('kasir');
     }
 
-    // ===== Helpers & Algorithms =====
+    // ===== Helpers =====
 
     private function expandToPriceArray(array $items): array
     {
-        // Ubah item (price, qty) jadi array harga per unit supaya n bener-bener "jumlah data"
         $prices = [];
         foreach ($items as $it) {
             $qty = (int)$it['qty'];
             $price = (int)$it['price'];
-            for ($i = 0; $i < $qty; $i++) {
-                $prices[] = $price;
-            }
+            for ($i = 0; $i < $qty; $i++) $prices[] = $price;
         }
         return $prices;
     }
@@ -171,33 +197,63 @@ class KasirController extends Controller
 
     private function sumRecursive(array $prices): int
     {
-        return $this->sumRecursiveHelper($prices, 0);
+        $n = count($prices);
+        return $this->sumRecursiveHelper($prices, 0, $n);
     }
 
-    private function sumRecursiveHelper(array $prices, int $i): int
+    private function sumRecursiveHelper(array $prices, int $i, int $n): int
     {
-        if ($i >= count($prices)) return 0;
-        return $prices[$i] + $this->sumRecursiveHelper($prices, $i + 1);
+        if ($i >= $n) return 0;
+        return $prices[$i] + $this->sumRecursiveHelper($prices, $i + 1, $n);
     }
 
-    /**
-     * Run callable N times, return median ms + last result.
-     */
+    private function sumIterativePrefix(array $prices, int $len): int
+    {
+        $sum = 0;
+        $n = min($len, count($prices));
+        for ($i = 0; $i < $n; $i++) $sum += $prices[$i];
+        return $sum;
+    }
+
+    private function sumRecursivePrefix(array $prices, int $len): int
+    {
+        $n = min($len, count($prices));
+        return $this->sumRecursiveHelper($prices, 0, $n);
+    }
+
     private function timeIt(callable $fn, int $repeat): array
     {
-        // warm-up
-        $fn();
+        $fn(); // warm-up
 
         $times = [];
         $last = null;
+
         for ($i = 0; $i < $repeat; $i++) {
             $start = hrtime(true);
             $last = $fn();
             $end = hrtime(true);
-            $times[] = ($end - $start) / 1_000_000; // ns -> ms
+            $times[] = ($end - $start) / 1_000_000; // ms
         }
+
         sort($times);
         $median = $times[(int) floor(count($times) / 2)];
-        return [round($median, 4), $last];
+        return [round($median, 6), $last];
+    }
+
+    private function makeSamplePoints(int $n, int $points = 10): array
+    {
+        $n = max(1, $n);
+        $points = max(2, $points);
+
+        $out = [];
+        for ($i = 1; $i <= $points; $i++) {
+            $k = (int) round(($n * $i) / $points);
+            $k = max(1, min($n, $k));
+            $out[] = $k;
+        }
+
+        $out = array_values(array_unique($out));
+        sort($out);
+        return $out;
     }
 }
