@@ -4,8 +4,15 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
+/**
+ * KasirController
+ *
+ * Sistem kasir sederhana + analisis performa iteratif vs rekursif
+ */
 class KasirController extends Controller
 {
+    private const MAX_SAFE_RECURSIVE_N = 2000;
+
     public function index(Request $request)
     {
         $items  = $request->session()->get('items', []);
@@ -57,6 +64,11 @@ class KasirController extends Controller
         return redirect()->route('kasir');
     }
 
+    /**
+     * Checkout SINGLE:
+     * - pilih iterative => grafik 1 garis iterative
+     * - pilih recursive => grafik 1 garis recursive
+     */
     public function checkout(Request $request)
     {
         $data = $request->validate([
@@ -72,33 +84,64 @@ class KasirController extends Controller
             return redirect()->route('kasir')->withErrors(['items' => 'Keranjang masih kosong. Tambahin barang dulu ya.']);
         }
 
-        $maxSafeRecursiveN = 2000;
-        if ($data['algorithm'] === 'recursive' && $n > $maxSafeRecursiveN) {
+        if ($data['algorithm'] === 'recursive' && $n > self::MAX_SAFE_RECURSIVE_N) {
             return redirect()->route('kasir')->withErrors([
-                'algorithm' => "n={$n} terlalu besar untuk rekursif (batas aman {$maxSafeRecursiveN}). Coba iteratif / kecilkan data."
+                'algorithm' => "n={$n} terlalu besar untuk rekursif (batas aman " . self::MAX_SAFE_RECURSIVE_N . "). Coba iteratif / kecilkan data."
             ]);
         }
 
+        // Ukur waktu eksekusi algoritma yang dipilih
         [$ms, $total] = $this->timeIt(function () use ($data, $prices) {
             return $data['algorithm'] === 'iterative'
                 ? $this->sumIterative($prices)
                 : $this->sumRecursive($prices);
-        }, (int)$data['repeat']);
+        }, (int) $data['repeat']);
 
         $algoLabel = $data['algorithm'] === 'iterative' ? 'Iteratif' : 'Rekursif';
+
+        // ===== Kurva grafik untuk SINGLE (1 garis) =====
+        $curveRepeat = max(1, min(10, (int) floor(((int)$data['repeat']) / 2)));
+        $points = $this->makeSamplePoints($n, 10);
+        $curveLabels = [];
+        $curveMs = [];
+
+        foreach ($points as $k) {
+            $curveLabels[] = $k;
+
+            if ($data['algorithm'] === 'iterative') {
+                [$t] = $this->timeIt(fn() => $this->sumIterativePrefix($prices, $k), $curveRepeat);
+                $curveMs[] = $t;
+            } else {
+                if ($k <= self::MAX_SAFE_RECURSIVE_N) {
+                    [$t] = $this->timeIt(fn() => $this->sumRecursivePrefix($prices, $k), $curveRepeat);
+                    $curveMs[] = $t;
+                } else {
+                    $curveMs[] = null;
+                }
+            }
+        }
 
         $request->session()->put('result', [
             'mode'      => 'single',
             'algorithm' => $algoLabel,
             'n'         => $n,
-            'repeat'    => (int)$data['repeat'],
+            'repeat'    => (int) $data['repeat'],
             'total'     => $total,
             'time_ms'   => $ms,
+            'curve' => [
+                'labels'  => $curveLabels,
+                'data_ms' => $curveMs,   // <-- 1 garis
+                'repeat'  => $curveRepeat,
+            ],
         ]);
 
         return redirect()->route('kasir');
     }
 
+    /**
+     * Compare:
+     * - grafik 2 garis (iteratif & rekursif)
+     */
     public function compare(Request $request)
     {
         $data = $request->validate([
@@ -113,26 +156,24 @@ class KasirController extends Controller
             return redirect()->route('kasir')->withErrors(['items' => 'Keranjang masih kosong. Tambahin barang dulu ya.']);
         }
 
-        $maxSafeRecursiveN = 2000;
-
-        // iteratif
+        // Ukur waktu iteratif
         [$iterMs, $iterTotal] = $this->timeIt(fn() => $this->sumIterative($prices), (int)$data['repeat']);
 
-        // rekursif (skip kalau kebesaran)
+        // Ukur waktu rekursif (skip jika n terlalu besar)
         $recMs = null;
         $recTotal = null;
         $note = null;
 
-        if ($n <= $maxSafeRecursiveN) {
+        if ($n <= self::MAX_SAFE_RECURSIVE_N) {
             [$recMs, $recTotal] = $this->timeIt(fn() => $this->sumRecursive($prices), (int)$data['repeat']);
         } else {
-            $note = "Rekursif di-skip karena n={$n} melewati batas aman {$maxSafeRecursiveN}.";
+            $note = "Rekursif di-skip karena n={$n} melewati batas aman " . self::MAX_SAFE_RECURSIVE_N . ".";
         }
 
-        // ===== kurva time vs n (sample points) =====
+        // ===== Kurva perbandingan (2 garis) =====
         $curveRepeat = max(1, min(10, (int) floor(((int)$data['repeat']) / 2)));
+        $points = $this->makeSamplePoints($n, 10);
 
-        $points = $this->makeSamplePoints($n, 10); // 10 titik biar halus
         $curveLabels = [];
         $curveIterMs = [];
         $curveRecMs  = [];
@@ -143,7 +184,7 @@ class KasirController extends Controller
             [$tIter] = $this->timeIt(fn() => $this->sumIterativePrefix($prices, $k), $curveRepeat);
             $curveIterMs[] = $tIter;
 
-            if ($k <= $maxSafeRecursiveN) {
+            if ($k <= self::MAX_SAFE_RECURSIVE_N) {
                 [$tRec] = $this->timeIt(fn() => $this->sumRecursivePrefix($prices, $k), $curveRepeat);
                 $curveRecMs[] = $tRec;
             } else {
@@ -232,7 +273,7 @@ class KasirController extends Controller
             $start = hrtime(true);
             $last = $fn();
             $end = hrtime(true);
-            $times[] = ($end - $start) / 1_000_000; // ms
+            $times[] = ($end - $start) / 1_000_000; // ns -> ms
         }
 
         sort($times);

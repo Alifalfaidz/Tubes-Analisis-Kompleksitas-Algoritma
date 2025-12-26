@@ -5,10 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Kasir — Iteratif vs Rekursif</title>
 
-  <!-- Tailwind CDN (tanpa Node) -->
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
@@ -24,7 +21,6 @@
 </head>
 
 <body class="min-h-screen bg-slate-950 text-slate-100">
-  <!-- neon bg -->
   <div class="fixed inset-0 -z-10">
     <div class="absolute -top-24 -left-24 h-96 w-96 rounded-full bg-fuchsia-600/30 blur-3xl"></div>
     <div class="absolute top-20 -right-24 h-96 w-96 rounded-full bg-cyan-400/25 blur-3xl"></div>
@@ -117,7 +113,7 @@
   <main class="mx-auto max-w-6xl px-4 py-8">
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-      <!-- LEFT: Input item -->
+      <!-- LEFT -->
       <section class="relative grain rounded-3xl bg-white/5 ring-1 ring-white/10 p-5 overflow-hidden lg:col-span-1">
         <h2 class="text-lg font-semibold">🛒 Input Barang</h2>
         <p class="text-sm text-slate-300 mt-1">Tambah item belanja (nama, harga, qty).</p>
@@ -140,7 +136,7 @@
             </div>
             <div>
               <label class="text-sm text-slate-200">Qty</label>
-              <input type="number" name="qty" value="{{ old('qty', 1) }}"
+              <input type="number" name="qty" value="{{ old('qty', 1) }}" min="1" max="1000"
                 class="mt-2 w-full rounded-2xl bg-black/30 ring-1 ring-white/10 px-4 py-3 text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-300" />
             </div>
           </div>
@@ -167,7 +163,7 @@
         </div>
       </section>
 
-      <!-- RIGHT: Cart + checkout -->
+      <!-- RIGHT -->
       <section class="rounded-3xl bg-white/5 ring-1 ring-white/10 p-5 lg:col-span-2">
         <div class="flex items-start justify-between gap-3">
           <div>
@@ -219,7 +215,7 @@
           </table>
         </div>
 
-        <!-- Checkout controls -->
+        <!-- Controls + Result -->
         <div class="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="rounded-2xl bg-black/30 ring-1 ring-white/10 p-4 md:col-span-2">
             <h3 class="font-semibold">⚙️ Pilih Algoritma</h3>
@@ -241,12 +237,10 @@
                                  px-4 py-2 text-sm transition pr-10
                                  hover:bg-emerald-500/15
                                  peer-checked:bg-emerald-500/25 peer-checked:ring-emerald-300
-                                 peer-checked:shadow-[0_0_0_1px_rgba(52,211,153,.35)]
-                                 after:content-['+'] after:absolute after:right-3 after:top-1/2
+                                 after:content-['✓'] after:absolute after:right-3 after:top-1/2
                                  after:-translate-y-1/2 after:opacity-0 after:transition
-                                 group-hover:after:opacity-100
-                                 peer-checked:after:content-['✓'] peer-checked:after:opacity-100">
-                      ⚡ Iteratif <span class="text-xs text-slate-300">(recommended)</span>
+                                 peer-checked:after:opacity-100">
+                      ⚡ Iteratif
                     </span>
                   </label>
 
@@ -260,14 +254,13 @@
                                  px-4 py-2 text-sm transition pr-10
                                  hover:bg-fuchsia-500/15
                                  peer-checked:bg-fuchsia-500/25 peer-checked:ring-fuchsia-300
-                                 peer-checked:shadow-[0_0_0_1px_rgba(232,121,249,.35)]
-                                 after:content-['+'] after:absolute after:right-3 after:top-1/2
+                                 after:content-['✓'] after:absolute after:right-3 after:top-1/2
                                  after:-translate-y-1/2 after:opacity-0 after:transition
-                                 group-hover:after:opacity-100
-                                 peer-checked:after:content-['✓'] peer-checked:after:opacity-100">
-                      🌀 Rekursif <span class="text-xs text-slate-300">(experimental)</span>
+                                 peer-checked:after:opacity-100">
+                      🌀 Rekursif
                     </span>
                   </label>
+
                 </div>
               </div>
 
@@ -278,10 +271,7 @@
               </div>
 
               <button class="group sm:col-span-3 rounded-2xl bg-gradient-to-r from-emerald-400 to-cyan-300 px-4 py-3 font-semibold text-slate-950 hover:opacity-95 active:scale-[0.99] transition">
-                <span class="inline-flex items-center justify-center gap-2">
-                  HITUNG TOTAL 💸
-                  <span class="opacity-0 translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition">＋</span>
-                </span>
+                HITUNG TOTAL 💸
               </button>
             </form>
 
@@ -289,15 +279,12 @@
               @csrf
               <input type="hidden" name="repeat" value="{{ old('repeat', 10) }}">
               <button class="group w-full rounded-2xl bg-white/10 ring-1 ring-white/15 px-4 py-3 text-sm hover:bg-white/15 transition">
-                <span class="inline-flex items-center justify-center gap-2">
-                  Compare Iteratif vs Rekursif 📊
-                  <span class="opacity-0 translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition">→</span>
-                </span>
+                Compare Iteratif vs Rekursif 📊
               </button>
             </form>
           </div>
 
-          <!-- Result card -->
+          <!-- Result card (FIXED) -->
           <div class="rounded-2xl bg-black/30 ring-1 ring-white/10 p-4">
             <h3 class="font-semibold">📌 Hasil</h3>
 
@@ -306,26 +293,26 @@
             @else
               @if(($result['mode'] ?? '') === 'single')
                 <div class="mt-3 space-y-2 text-sm">
-                  <p class="text-slate-300">Algoritma: <b class="text-slate-100">{{ $result['algorithm'] }}</b></p>
-                  <p class="text-slate-300">n (jumlah data): <b class="text-slate-100">{{ $result['n'] }}</b></p>
-                  <p class="text-slate-300">Repeat: <b class="text-slate-100">{{ $result['repeat'] }}</b></p>
-                  <p class="text-slate-300">Waktu (median): <b class="text-slate-100">{{ $result['time_ms'] }} ms</b></p>
-                  <p class="text-slate-300">Total: <b class="text-slate-100">Rp {{ number_format($result['total'], 0, ',', '.') }}</b></p>
+                  <p class="text-slate-300">Algoritma: <b class="text-slate-100">{{ $result['algorithm'] ?? '-' }}</b></p>
+                  <p class="text-slate-300">n (jumlah data): <b class="text-slate-100">{{ $result['n'] ?? 0 }}</b></p>
+                  <p class="text-slate-300">Repeat: <b class="text-slate-100">{{ $result['repeat'] ?? 0 }}</b></p>
+                  <p class="text-slate-300">Waktu (median): <b class="text-slate-100">{{ $result['time_ms'] ?? '-' }} ms</b></p>
+                  <p class="text-slate-300">Total: <b class="text-slate-100">Rp {{ number_format($result['total'] ?? 0, 0, ',', '.') }}</b></p>
                 </div>
               @else
                 <div class="mt-3 space-y-3 text-sm">
-                  <p class="text-slate-300">n (jumlah data): <b class="text-slate-100">{{ $result['n'] }}</b></p>
-                  <p class="text-slate-300">Repeat: <b class="text-slate-100">{{ $result['repeat'] }}</b></p>
+                  <p class="text-slate-300">n (jumlah data): <b class="text-slate-100">{{ $result['n'] ?? 0 }}</b></p>
+                  <p class="text-slate-300">Repeat: <b class="text-slate-100">{{ $result['repeat'] ?? 0 }}</b></p>
 
                   <div class="rounded-xl bg-emerald-500/10 ring-1 ring-emerald-400/20 p-3">
                     <p class="font-semibold">⚡ Iteratif</p>
-                    <p class="text-slate-200">Time: <b>{{ $result['iter']['time_ms'] }} ms</b></p>
-                    <p class="text-slate-200">Total: <b>Rp {{ number_format($result['iter']['total'], 0, ',', '.') }}</b></p>
+                    <p class="text-slate-200">Time: <b>{{ $result['iter']['time_ms'] ?? '-' }} ms</b></p>
+                    <p class="text-slate-200">Total: <b>Rp {{ number_format($result['iter']['total'] ?? 0, 0, ',', '.') }}</b></p>
                   </div>
 
                   <div class="rounded-xl bg-fuchsia-500/10 ring-1 ring-fuchsia-400/20 p-3">
                     <p class="font-semibold">🌀 Rekursif</p>
-                    @if(is_null($result['rec']['time_ms']))
+                    @if(is_null($result['rec']['time_ms'] ?? null))
                       <p class="text-slate-200">Time: <b>-</b></p>
                       <p class="text-slate-200">Total: <b>-</b></p>
                     @else
@@ -340,8 +327,8 @@
 
                   <div class="text-xs text-slate-300 rounded-xl bg-white/5 ring-1 ring-white/10 p-3">
                     <p class="font-semibold text-slate-200">Complexity (buat laporan)</p>
-                    <p>Iteratif: {{ $result['complexity']['iterative_time'] }} time, {{ $result['complexity']['iterative_space'] }} space</p>
-                    <p>Rekursif: {{ $result['complexity']['recursive_time'] }} time, {{ $result['complexity']['recursive_space'] }} space</p>
+                    <p>Iteratif: {{ $result['complexity']['iterative_time'] ?? '-' }} time, {{ $result['complexity']['iterative_space'] ?? '-' }} space</p>
+                    <p>Rekursif: {{ $result['complexity']['recursive_time'] ?? '-' }} time, {{ $result['complexity']['recursive_space'] ?? '-' }} space</p>
                   </div>
                 </div>
               @endif
@@ -349,16 +336,23 @@
           </div>
         </div>
 
-        <!-- GRAFIK BESAR FULL-WIDTH DI DALAM SECTION KANAN -->
-        @if(!empty($result) && (($result['mode'] ?? '') === 'compare'))
+        <!-- Grafik (single & compare) -->
+        @if(!empty($result) && !empty($result['curve']))
           <section class="mt-6 relative grain rounded-3xl bg-white/5 ring-1 ring-white/10 p-6 overflow-hidden">
             <div class="flex items-start justify-between gap-3">
               <div>
-                <h3 class="text-lg font-semibold">Grafik Perbandingan Performa</h3>
+                <h3 class="text-lg font-semibold">
+                  Grafik Performa
+                  @if(($result['mode'] ?? '') === 'compare')
+                    (Iteratif vs Rekursif)
+                  @else
+                    ({{ $result['algorithm'] ?? '-' }})
+                  @endif
+                </h3>
                 <p class="text-sm text-slate-300 mt-1">Waktu eksekusi vs jumlah data (n).</p>
               </div>
               <div class="text-xs text-slate-300 rounded-2xl bg-black/30 ring-1 ring-white/10 px-3 py-2">
-                n: <b>{{ $result['n'] }}</b> • repeat: <b>{{ $result['repeat'] }}</b>
+                mode: <b>{{ $result['mode'] ?? '-' }}</b> • n: <b>{{ $result['n'] ?? '-' }}</b> • repeat: <b>{{ $result['repeat'] ?? '-' }}</b>
               </div>
             </div>
 
@@ -385,64 +379,61 @@
   (function () {
     const result = @json($result ?? []);
     if (!result || Object.keys(result).length === 0) return;
-    if (result.mode !== 'compare') return;
 
     const el = document.getElementById('perfBigChart');
     if (!el) return;
 
-    // pakai curve kalau ada, fallback ke 2 titik
     const curve = result.curve || null;
+    if (!curve || !curve.labels) return;
 
-    let labels = [];
-    let iter = [];
-    let rec  = [];
-
-    if (curve && curve.labels && curve.iter_ms) {
-      labels = curve.labels;
-      iter = curve.iter_ms || [];
-      rec  = curve.rec_ms || [];
-    } else {
-      labels = ['Iteratif', 'Rekursif'];
-      iter = [result.iter?.time_ms ?? 0];
-      rec  = [(result.rec?.time_ms == null) ? null : result.rec.time_ms];
-    }
-
-    // auto unit ms -> µs
+    let labels = curve.labels || [];
+    let datasets = [];
     let unit = 'ms';
-    const all = [...iter, ...rec].filter(v => v !== null && v !== undefined);
-    const maxVal = all.length ? Math.max(...all) : 0;
 
-    if (maxVal > 0 && maxVal < 1) {
-      unit = 'µs';
-      iter = iter.map(v => v == null ? null : v * 1000);
-      rec  = rec.map(v => v == null ? null : v * 1000);
+    if (result.mode === 'compare') {
+      let iter = curve.iter_ms || [];
+      let rec  = curve.rec_ms || [];
+
+      const all = [...iter, ...rec].filter(v => v !== null && v !== undefined);
+      const maxVal = all.length ? Math.max(...all) : 0;
+
+      if (maxVal > 0 && maxVal < 1) {
+        unit = 'µs';
+        iter = iter.map(v => v == null ? null : v * 1000);
+        rec  = rec.map(v => v == null ? null : v * 1000);
+      }
+
+      datasets = [
+        { label: `Iteratif (${unit})`, data: iter, tension: 0.25, pointRadius: 5, borderWidth: 3 },
+        { label: `Rekursif (${unit})`, data: rec,  tension: 0.25, pointRadius: 5, borderWidth: 3 },
+      ];
+    } else {
+      let data = curve.data_ms || [];
+      const all = [...data].filter(v => v !== null && v !== undefined);
+      const maxVal = all.length ? Math.max(...all) : 0;
+
+      if (maxVal > 0 && maxVal < 1) {
+        unit = 'µs';
+        data = data.map(v => v == null ? null : v * 1000);
+      }
+
+      const labelAlgo = result.algorithm || 'Algoritma';
+      datasets = [
+        { label: `${labelAlgo} (${unit})`, data, tension: 0.25, pointRadius: 5, borderWidth: 3 },
+      ];
     }
 
-    // destroy kalau sebelumnya ada
     if (window.__perfBigChart) window.__perfBigChart.destroy();
 
     window.__perfBigChart = new Chart(el, {
       type: 'line',
-      data: {
-        labels,
-        datasets: [
-          { label: `Iteratif (${unit})`, data: iter, tension: 0.25, pointRadius: 5, borderWidth: 3 },
-          { label: `Rekursif (${unit})`, data: rec,  tension: 0.25, pointRadius: 5, borderWidth: 3 },
-        ]
-      },
+      data: { labels, datasets },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: {
-            display: true,
-            labels: { color: '#e2e8f0' }
-          },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => ` ${ctx.dataset.label}: ${ctx.raw ?? '-'} ${unit}`
-            }
-          }
+          legend: { display: true, labels: { color: '#e2e8f0' } },
+          tooltip: { callbacks: { label: (ctx) => ` ${ctx.dataset.label}: ${ctx.raw ?? '-'} ${unit}` } }
         },
         scales: {
           x: {
